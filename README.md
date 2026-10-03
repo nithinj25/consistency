@@ -1,21 +1,19 @@
 # consistency
 
-One habit. One button. One heatmap. Nothing else.
+A year of dots. Each dot is a day. Fill it.
 
-- **Mark today:** tap the circle, or press `Space` / `Enter`. Tap again to undo.
-- **Forgot yesterday?** Tap that square in the heatmap to toggle it.
-- **Rename it:** click the title.
-- **Heatmap shade = chain length** on that day (1–2, 3–6, 7–20, 21+ days), so the longer you go, the brighter it gets.
-- Streak doesn't break until a full day is missed — today stays "pending" until midnight.
+- **Mark today:** tap anywhere, or press `Space`. (Tapping anywhere never unmarks.)
+- **Fix a day:** tap its dot to toggle it.
+- **Rename:** tap the title.
+- **Other years:** tap the year, or `←` / `→`.
+- **Backup:** `e` exports JSON, `i` imports it.
 
-No account, no server, no build step. Data lives in your browser's `localStorage`;
-`export` / `import` gives you a plain JSON backup (`{"days": ["2026-10-03", ...]}`).
+Light/dark follows your system. Today's dot breathes until you fill it. The streak
+doesn't break until a whole day is missed.
+
+No account, no server, no build. Data stays in your browser (`localStorage`).
 
 ## Run it
 
-Open `index.html`, or host it anywhere static. Easiest:
-
-1. GitHub → repo **Settings → Pages** → Source: *Deploy from a branch* → pick the branch, `/ (root)`.
-2. Open the URL on your phone → **Add to Home Screen**. It works offline and opens like an app.
-
-Tip: data is per browser/device, so pick one place (your phone's home screen) as the source of truth.
+GitHub repo **Settings → Pages** → deploy this branch from `/ (root)`, open the URL on your
+phone → **Add to Home Screen**. Works offline.

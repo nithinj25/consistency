@@ -1,5 +1,5 @@
 // Offline cache: network first so updates land, cache as fallback.
-const CACHE = 'consistency-v1';
+const CACHE = 'consistency-v2';
 const FILES = ['./', 'index.html', 'manifest.json', 'icon.svg'];
 
 self.addEventListener('install', e => {

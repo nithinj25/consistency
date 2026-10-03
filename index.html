@@ -3,244 +3,178 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0d1117">
+<meta name="theme-color" content="#f7f7f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0b0b" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Consistency</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
 <style>
-  :root {
-    --bg: #0d1117; --fg: #e6edf3; --dim: #7d8590; --cell: #161b22; --line: #21262d;
-    --l1: #0e4429; --l2: #006d32; --l3: #26a641; --l4: #39d353; --today: #e6edf3;
+  :root { --bg: #f7f7f5; --ink: #111; --dim: #a3a3a0; --dot: #e4e4e0; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0b0b0b; --ink: #ededed; --dim: #555; --dot: #1f1f1f; }
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { background: var(--bg); color: var(--fg); height: 100%; }
+  html, body { background: var(--bg); color: var(--ink); min-height: 100%; }
   body {
-    font: 15px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 28px; padding: max(24px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
-    -webkit-tap-highlight-color: transparent; user-select: none;
+    font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif;
+    display: grid; place-items: center; min-height: 100vh; min-height: 100dvh;
+    padding: max(32px, env(safe-area-inset-top)) 24px max(32px, env(safe-area-inset-bottom));
+    -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
   }
-  h1 { font-size: 13px; font-weight: 500; color: var(--dim); letter-spacing: .2em; text-transform: uppercase; outline: none; }
-  .streak { text-align: center; }
-  .streak .n { font-size: 96px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
-  .streak .label { color: var(--dim); margin-top: 6px; }
-  button#mark {
-    width: 168px; height: 168px; border-radius: 50%; border: 2px solid var(--line);
-    background: var(--cell); color: var(--dim); font: inherit; font-size: 15px; cursor: pointer;
-    transition: transform .12s ease, background .25s ease, border-color .25s ease, color .25s ease;
-  }
-  button#mark:active { transform: scale(.94); }
-  button#mark:focus-visible { outline: 2px solid var(--l3); outline-offset: 4px; }
-  button#mark.done { background: var(--l4); border-color: var(--l4); color: #04260f; font-weight: 700; }
-  button#mark.pop { animation: pop .45s ease; }
-  @keyframes pop { 40% { transform: scale(1.12); } 100% { transform: scale(1); } }
-  .msg { color: var(--dim); text-align: center; min-height: 1.4em; max-width: 36ch; }
-  .stats { display: flex; gap: 28px; color: var(--dim); font-size: 13px; }
-  .stats b { color: var(--fg); font-weight: 600; }
-  .wrap { max-width: 100%; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
-  .wrap::-webkit-scrollbar { display: none; }
-  .grid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 12px); gap: 3px; width: max-content; }
-  .grid div { width: 12px; height: 12px; border-radius: 2px; background: var(--cell); cursor: pointer; }
-  .grid div.future { opacity: .35; cursor: default; }
-  .grid .l1 { background: var(--l1); } .grid .l2 { background: var(--l2); }
-  .grid .l3 { background: var(--l3); } .grid .l4 { background: var(--l4); }
-  .grid div.today { outline: 1px solid var(--today); outline-offset: 1px; }
-  .hint { color: var(--dim); font-size: 11px; opacity: .6; text-align: center; }
-  .hint a { color: inherit; cursor: pointer; text-decoration: underline dotted; }
-  #tip { position: fixed; pointer-events: none; background: var(--fg); color: var(--bg); font-size: 12px;
-         padding: 3px 7px; border-radius: 4px; opacity: 0; transition: opacity .1s; white-space: nowrap; }
+  main { width: 100%; max-width: 520px; }
+  header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 40px; }
+  #title { font-size: 14px; color: var(--dim); outline: none; cursor: text; }
+  #streak { font-size: 56px; font-weight: 200; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+  #streak small { font-size: 14px; font-weight: 400; color: var(--dim); letter-spacing: 0; margin-left: 6px; }
+
+  #dots { display: grid; grid-template-columns: repeat(auto-fill, 12px); gap: 10px; justify-content: space-between; }
+  #dots i { width: 12px; height: 12px; border-radius: 50%; background: var(--dot); cursor: pointer;
+            transition: background .3s ease, transform .3s ease; }
+  #dots i.on { background: var(--ink); }
+  #dots i.future { opacity: .45; cursor: default; }
+  #dots i.today:not(.on) { box-shadow: 0 0 0 1.5px var(--ink) inset; background: transparent; animation: breathe 2.4s ease-in-out infinite; }
+  #dots i.pop { animation: pop .5s cubic-bezier(.3, 1.6, .5, 1); }
+  @keyframes breathe { 50% { opacity: .35; } }
+  @keyframes pop { 0% { transform: scale(.4); } 100% { transform: scale(1); } }
+
+  footer { display: flex; justify-content: space-between; margin-top: 40px; color: var(--dim); font-variant-numeric: tabular-nums; }
+  #year { cursor: pointer; }
 </style>
 </head>
 <body>
-  <h1 id="title" spellcheck="false">consistency</h1>
-
-  <div class="streak">
-    <div class="n" id="streak">0</div>
-    <div class="label">day streak</div>
-  </div>
-
-  <button id="mark" aria-pressed="false">mark today</button>
-  <div class="msg" id="msg"></div>
-
-  <div class="wrap" id="wrap"><div class="grid" id="grid"></div></div>
-
-  <div class="stats">
-    <span>best <b id="best">0</b></span>
-    <span>total <b id="total">0</b></span>
-    <span>30d <b id="rate">0%</b></span>
-  </div>
-
-  <div class="hint">space to mark · tap a square to fix a past day · <a id="exp">export</a> · <a id="imp">import</a></div>
-  <div id="tip"></div>
+<main>
+  <header>
+    <span id="title" spellcheck="false">consistency</span>
+    <span id="streak">0<small>days</small></span>
+  </header>
+  <div id="dots"></div>
+  <footer>
+    <span id="year"></span>
+    <span id="count"></span>
+  </footer>
+</main>
 
 <script>
 (() => {
   const KEY = 'consistency.v1';
   const $ = id => document.getElementById(id);
 
-  // --- storage -------------------------------------------------------------
   let state = { title: 'consistency', days: [] };
   try { Object.assign(state, JSON.parse(localStorage.getItem(KEY)) || {}); } catch {}
-  let days = new Set(state.days);
+  const days = new Set(state.days);
   const save = () => {
     state.days = [...days].sort();
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
   };
 
-  // --- dates (local time, YYYY-MM-DD) --------------------------------------
   const key = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
-  const midnight = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const today = () => midnight(new Date());
+  const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  const today = () => addDays(new Date(), 0);
 
-  // Length of the run of consecutive done days ending at d.
-  const runEndingAt = d => { let n = 0; while (days.has(key(d))) { n++; d = addDays(d, -1); } return n; };
+  const run = d => { let n = 0; while (days.has(key(d))) { n++; d = addDays(d, -1); } return n; };
+  // Today stays "pending" until midnight, so an unmarked morning doesn't read as a broken streak.
+  const streak = () => { const t = today(); return days.has(key(t)) ? run(t) : run(addDays(t, -1)); };
 
-  const currentStreak = () => {
-    const t = today();
-    return days.has(key(t)) ? runEndingAt(t) : runEndingAt(addDays(t, -1));
-  };
+  let year = today().getFullYear();
 
-  const bestStreak = () => {
-    let best = 0, run = 0, prev = null;
-    for (const k of [...days].sort()) {
-      const d = new Date(k + 'T00:00');
-      run = prev && key(addDays(prev, 1)) === k ? run + 1 : 1;
-      best = Math.max(best, run); prev = d;
-    }
-    return best;
-  };
+  function render(popKey) {
+    const t = today(), tk = key(t);
+    const n = streak();
+    $('streak').firstChild.textContent = n;
+    $('streak').lastChild.textContent = n === 1 ? 'day' : 'days';
 
-  // Deeper green the longer the chain was on that day — the chain itself is the reward.
-  const level = run => run >= 21 ? 4 : run >= 7 ? 3 : run >= 3 ? 2 : run >= 1 ? 1 : 0;
-
-  // --- messages ------------------------------------------------------------
-  const pick = a => a[new Date().getDate() % a.length];
-  const message = (doneToday, streak) => {
-    if (doneToday) {
-      if (streak === 1) return 'Day one. Every chain starts here.';
-      if ([7, 14, 21, 30, 50, 100, 150, 200, 365].includes(streak)) return `${streak} days. That's who you are now.`;
-      return pick(['Done. See you tomorrow.', 'Another link in the chain.', 'Showed up again. That\'s the whole game.',
-                   'Quiet reps compound.', 'Today: handled.']);
-    }
-    if (streak > 0) return `Don't break the chain — ${streak} day${streak > 1 ? 's' : ''} on the line.`;
-    return pick(['Just today. Nothing else.', 'Start small. Start now.', 'The best time was yesterday. The next best is today.']);
-  };
-
-  // --- render --------------------------------------------------------------
-  const grid = $('grid'), tip = $('tip');
-  const WEEKS = 53;
-
-  function render(pop) {
-    const t = today(), tk = key(t), doneToday = days.has(tk), streak = currentStreak();
-
-    $('streak').textContent = streak;
-    const btn = $('mark');
-    btn.classList.toggle('done', doneToday);
-    btn.setAttribute('aria-pressed', doneToday);
-    btn.textContent = doneToday ? '✓ done' : 'mark today';
-    if (pop) { btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop'); }
-    $('msg').textContent = message(doneToday, streak);
-    $('best').textContent = bestStreak();
-    $('total').textContent = days.size;
-    let last30 = 0; for (let i = 0; i < 30; i++) if (days.has(key(addDays(t, -i)))) last30++;
-    $('rate').textContent = Math.round(last30 / 30 * 100) + '%';
-
-    // Grid: WEEKS columns, Sunday-first rows, last column ends this Saturday.
-    const start = addDays(t, -(WEEKS - 1) * 7 - t.getDay());
     const frag = document.createDocumentFragment();
-    let run = 0;
-    for (let i = 0; i < WEEKS * 7; i++) {
-      const d = addDays(start, i), k = key(d), el = document.createElement('div');
-      if (d > t) { el.className = 'future'; frag.appendChild(el); continue; }
-      run = days.has(k) ? run + 1 : 0;
-      if (i === 0 && run) run = runEndingAt(d);
-      const lv = level(run);
-      el.className = (lv ? 'l' + lv : '') + (k === tk ? ' today' : '');
+    let done = 0, elapsed = 0;
+    for (let d = new Date(year, 0, 1); d.getFullYear() === year; d = addDays(d, 1)) {
+      const k = key(d), el = document.createElement('i');
       el.dataset.k = k;
+      el.title = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+      if (d > t) el.className = 'future';
+      else {
+        elapsed++;
+        if (days.has(k)) { el.classList.add('on'); done++; }
+        if (k === tk) el.classList.add('today');
+        if (k === popKey) el.classList.add('pop');
+      }
       frag.appendChild(el);
     }
-    grid.replaceChildren(frag);
+    $('dots').replaceChildren(frag);
+    $('year').textContent = year;
+    $('count').textContent = `${done} / ${elapsed}`;
   }
 
   function toggle(k) {
     days.has(k) ? days.delete(k) : days.add(k);
     save();
-    render(k === key(today()) && days.has(k));
-    if (navigator.vibrate && days.has(k)) navigator.vibrate(12);
+    render(days.has(k) ? k : null);
+    if (days.has(k) && navigator.vibrate) navigator.vibrate(10);
   }
+  const markToday = () => {
+    const k = key(today());
+    year = today().getFullYear();
+    days.has(k) ? render() : toggle(k);
+  };
 
-  // --- input ---------------------------------------------------------------
-  $('mark').addEventListener('click', () => toggle(key(today())));
+  // Tap a dot to toggle that day. Tap anywhere else to mark today (never unmarks).
+  document.addEventListener('click', e => {
+    if (e.target.closest('#title, #year')) return;
+    const k = e.target.dataset && e.target.dataset.k;
+    if (k) { if (!e.target.classList.contains('future')) toggle(k); return; }
+    markToday();
+  });
+
+  const years = () => [...new Set([...days].map(k => +k.slice(0, 4)).concat(today().getFullYear()))].sort();
+  const shiftYear = dir => { const ys = years(), i = ys.indexOf(year); year = ys[(i + dir + ys.length) % ys.length]; render(); };
+  $('year').addEventListener('click', () => shiftYear(-1));
 
   document.addEventListener('keydown', e => {
     if (document.activeElement === $('title')) return;
-    if ((e.key === ' ' || e.key === 'Enter') && e.target !== $('mark')) { e.preventDefault(); toggle(key(today())); }
+    if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); markToday(); }
+    else if (e.key === 'ArrowLeft') shiftYear(-1);
+    else if (e.key === 'ArrowRight') shiftYear(1);
+    else if (e.key === 'e') exportData();
+    else if (e.key === 'i') importData();
   });
 
-  grid.addEventListener('click', e => {
-    const k = e.target.dataset.k;
-    if (k) toggle(k);
-  });
-
-  const fmt = k => new Date(k + 'T00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-  grid.addEventListener('mouseover', e => {
-    const k = e.target.dataset.k;
-    if (!k) { tip.style.opacity = 0; return; }
-    tip.textContent = `${days.has(k) ? '✓' : '·'} ${fmt(k)}`;
-    const r = e.target.getBoundingClientRect();
-    tip.style.left = Math.min(innerWidth - tip.offsetWidth - 8, Math.max(8, r.left + r.width / 2 - tip.offsetWidth / 2)) + 'px';
-    tip.style.top = (r.top - 28) + 'px';
-    tip.style.opacity = 1;
-  });
-  grid.addEventListener('mouseleave', () => tip.style.opacity = 0);
-
-  // Editable title: click, type, Enter.
   const title = $('title');
   title.textContent = state.title;
-  document.title = state.title === 'consistency' ? 'Consistency' : state.title;
-  title.addEventListener('click', () => { title.contentEditable = 'true'; title.focus(); document.getSelection().selectAllChildren(title); });
+  title.addEventListener('click', () => { title.contentEditable = 'true'; title.focus(); getSelection().selectAllChildren(title); });
   title.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); title.blur(); } });
   title.addEventListener('blur', () => {
     title.contentEditable = 'false';
     state.title = title.textContent.trim().slice(0, 40) || 'consistency';
-    title.textContent = state.title; document.title = state.title; save();
+    title.textContent = state.title; save();
   });
 
-  // Backup: plain JSON, yours to keep.
-  $('exp').addEventListener('click', () => {
+  // Backup: press e / i.
+  function exportData() {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }));
     a.download = `consistency-${key(today())}.json`; a.click();
-  });
-  $('imp').addEventListener('click', () => {
-    const i = document.createElement('input'); i.type = 'file'; i.accept = '.json,application/json';
-    i.onchange = async () => {
+  }
+  function importData() {
+    const input = document.createElement('input'); input.type = 'file'; input.accept = '.json,application/json';
+    input.onchange = async () => {
       try {
-        const data = JSON.parse(await i.files[0].text());
-        const valid = (data.days || []).filter(k => /^\d{4}-\d\d-\d\d$/.test(k));
-        valid.forEach(k => days.add(k));
-        if (data.title) state.title = data.title;
-        title.textContent = state.title; save(); render();
+        const data = JSON.parse(await input.files[0].text());
+        (data.days || []).filter(k => /^\d{4}-\d\d-\d\d$/.test(k)).forEach(k => days.add(k));
+        if (data.title) title.textContent = state.title = data.title;
+        save(); render();
       } catch { alert('Could not read that file.'); }
     };
-    i.click();
-  });
+    input.click();
+  }
 
-  // Keep it correct if left open past midnight or reopened from background.
+  // Stay correct across midnight and when reopened from the background.
   let lastDay = key(today());
-  const tick = () => { if (key(today()) !== lastDay) { lastDay = key(today()); render(); } };
+  const tick = () => { if (key(today()) !== lastDay) { lastDay = key(today()); year = today().getFullYear(); render(); } };
   setInterval(tick, 60000);
   document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && tick());
 
   render();
-  // Narrow screens: keep the most recent weeks in view.
-  const toRecent = () => $('wrap').scrollLeft = 1e6;
-  toRecent(); addEventListener('resize', toRecent);
-
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
 </script>
