@@ -12,9 +12,9 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
 <style>
-  :root { --bg: #f7f7f5; --ink: #111; --dim: #a3a3a0; --dot: #e4e4e0; }
+  :root { --bg: #f7f7f5; --card: #ffffff; --ink: #111; --dim: #a3a3a0; --dot: #e4e4e0; --line: #ececea; --shade: rgba(0,0,0,.18); }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #0b0b0b; --ink: #ededed; --dim: #555; --dot: #1f1f1f; }
+    :root { --bg: #0b0b0b; --card: #151515; --ink: #ededed; --dim: #5a5a5a; --dot: #1f1f1f; --line: #232323; --shade: rgba(0,0,0,.6); }
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { background: var(--bg); color: var(--ink); min-height: 100%; }
@@ -24,15 +24,20 @@
     padding: max(32px, env(safe-area-inset-top)) 24px max(32px, env(safe-area-inset-bottom));
     -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
   }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
   main { width: 100%; max-width: 520px; }
-  header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 40px; }
-  #title { font-size: 14px; color: var(--dim); outline: none; cursor: text; }
-  #streak { font-size: 56px; font-weight: 200; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+
+  nav { display: flex; flex-wrap: wrap; gap: 6px 20px; align-items: baseline; }
+  nav span { color: var(--dim); cursor: pointer; outline: none; transition: color .2s; min-width: 1ch; }
+  nav span.on { color: var(--ink); }
+  nav span[contenteditable="true"] { border-bottom: 1px solid var(--ink); }
+  nav .add { color: var(--dim); }
+
+  #streak { margin: 28px 0 36px; font-size: 56px; font-weight: 200; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; }
   #streak small { font-size: 14px; font-weight: 400; color: var(--dim); letter-spacing: 0; margin-left: 6px; }
 
   #dots { display: grid; grid-template-columns: repeat(auto-fill, 12px); gap: 10px; justify-content: space-between; }
-  #dots i { width: 12px; height: 12px; border-radius: 50%; background: var(--dot); cursor: pointer;
-            transition: background .3s ease, transform .3s ease; }
+  #dots i { width: 12px; height: 12px; border-radius: 50%; background: var(--dot); cursor: pointer; transition: background .3s, transform .3s; }
   #dots i.on { background: var(--ink); }
   #dots i.future { opacity: .45; cursor: default; }
   #dots i.today:not(.on) { box-shadow: 0 0 0 1.5px var(--ink) inset; background: transparent; animation: breathe 2.4s ease-in-out infinite; }
@@ -40,49 +45,94 @@
   @keyframes breathe { 50% { opacity: .35; } }
   @keyframes pop { 0% { transform: scale(.4); } 100% { transform: scale(1); } }
 
-  footer { display: flex; justify-content: space-between; margin-top: 40px; color: var(--dim); font-variant-numeric: tabular-nums; }
+  footer { display: flex; justify-content: space-between; margin-top: 36px; color: var(--dim); font-variant-numeric: tabular-nums; }
   #year { cursor: pointer; }
+
+  /* Day sheet */
+  #sheet { position: fixed; inset: 0; background: var(--shade); display: flex; align-items: flex-end; justify-content: center;
+           opacity: 0; pointer-events: none; transition: opacity .2s; }
+  #sheet.open { opacity: 1; pointer-events: auto; }
+  .card { width: 100%; max-width: 520px; max-height: 80vh; overflow-y: auto; background: var(--card);
+          border-radius: 18px 18px 0 0; padding: 22px 24px max(28px, env(safe-area-inset-bottom));
+          transform: translateY(24px); transition: transform .25s ease; user-select: text; -webkit-user-select: text; }
+  #sheet.open .card { transform: none; }
+  @media (min-width: 600px) { #sheet { align-items: center; } .card { border-radius: 18px; } }
+  .head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .head span { font-weight: 500; }
+  .head button { color: var(--dim); font-size: 20px; width: 32px; height: 32px; line-height: 1; }
+  .head button:disabled { opacity: .25; cursor: default; }
+  .row { padding: 14px 0; border-top: 1px solid var(--line); }
+  .row label { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  .row label b { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 0 1.5px var(--dim) inset; transition: background .2s, box-shadow .2s; }
+  .row.done label b { background: var(--ink); box-shadow: none; }
+  .row label span { color: var(--dim); }
+  .row.done label span { color: var(--ink); }
+  .row textarea { display: block; width: 100%; margin-top: 8px; padding-left: 22px; border: 0; outline: 0; resize: none;
+                  background: none; color: var(--ink); font: inherit; line-height: 1.5; overflow: hidden; }
+  .row textarea::placeholder { color: var(--dim); opacity: .7; }
 </style>
 </head>
 <body>
 <main>
-  <header>
-    <span id="title" spellcheck="false">consistency</span>
-    <span id="streak">0<small>days</small></span>
-  </header>
+  <nav id="tabs"></nav>
+  <div id="streak">0<small>days</small></div>
   <div id="dots"></div>
-  <footer>
-    <span id="year"></span>
-    <span id="count"></span>
-  </footer>
+  <footer><span id="year"></span><span id="count"></span></footer>
 </main>
+
+<div id="sheet">
+  <div class="card">
+    <div class="head"><button id="prev" aria-label="previous day">‹</button><span id="date"></span><button id="next" aria-label="next day">›</button></div>
+    <div id="rows"></div>
+  </div>
+</div>
 
 <script>
 (() => {
-  const KEY = 'consistency.v1';
+  const KEY = 'consistency.v2';
   const $ = id => document.getElementById(id);
 
-  let state = { title: 'consistency', days: [] };
-  try { Object.assign(state, JSON.parse(localStorage.getItem(KEY)) || {}); } catch {}
-  const days = new Set(state.days);
-  const save = () => {
-    state.days = [...days].sort();
-    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
-  };
-
+  // --- dates (local time, YYYY-MM-DD) --------------------------------------
   const key = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const parse = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
   const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
   const today = () => addDays(new Date(), 0);
+  const uid = () => Math.random().toString(36).slice(2, 9);
 
-  const run = d => { let n = 0; while (days.has(key(d))) { n++; d = addDays(d, -1); } return n; };
+  // --- storage: { goals: [{ id, name, days: { 'YYYY-MM-DD': note } }], active } ---
+  let state;
+  try { state = JSON.parse(localStorage.getItem(KEY)); } catch {}
+  if (!state || !Array.isArray(state.goals) || !state.goals.length) {
+    let v1; try { v1 = JSON.parse(localStorage.getItem('consistency.v1')); } catch {}
+    state = v1 && v1.days && v1.days.length
+      ? { goals: [{ id: uid(), name: v1.title || 'consistency', days: Object.fromEntries(v1.days.map(k => [k, ''])) }] }
+      : { goals: [{ id: uid(), name: 'ml', days: {} }, { id: uid(), name: 'dsa', days: {} }] };
+  }
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
+  const goal = () => state.goals.find(g => g.id === state.active) || (state.active = state.goals[0].id, state.goals[0]);
+
   // Today stays "pending" until midnight, so an unmarked morning doesn't read as a broken streak.
-  const streak = () => { const t = today(); return days.has(key(t)) ? run(t) : run(addDays(t, -1)); };
+  const streak = g => {
+    const run = d => { let n = 0; while (key(d) in g.days) { n++; d = addDays(d, -1); } return n; };
+    const t = today(); return key(t) in g.days ? run(t) : run(addDays(t, -1));
+  };
 
   let year = today().getFullYear();
 
+  // --- main view -----------------------------------------------------------
   function render(popKey) {
-    const t = today(), tk = key(t);
-    const n = streak();
+    const g = goal(), t = today(), tk = key(t);
+
+    const tabs = state.goals.map(x => {
+      const s = document.createElement('span');
+      s.textContent = x.name; s.dataset.id = x.id; s.spellcheck = false;
+      if (x.id === g.id) s.className = 'on';
+      return s;
+    });
+    const add = document.createElement('span'); add.className = 'add'; add.textContent = '+'; add.title = 'new goal';
+    $('tabs').replaceChildren(...tabs, add);
+
+    const n = streak(g);
     $('streak').firstChild.textContent = n;
     $('streak').lastChild.textContent = n === 1 ? 'day' : 'days';
 
@@ -91,11 +141,12 @@
     for (let d = new Date(year, 0, 1); d.getFullYear() === year; d = addDays(d, 1)) {
       const k = key(d), el = document.createElement('i');
       el.dataset.k = k;
-      el.title = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
       if (d > t) el.className = 'future';
       else {
         elapsed++;
-        if (days.has(k)) { el.classList.add('on'); done++; }
+        const note = g.days[k];
+        el.title = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) + (note ? ' — ' + note : '');
+        if (note !== undefined) { el.classList.add('on'); done++; }
         if (k === tk) el.classList.add('today');
         if (k === popKey) el.classList.add('pop');
       }
@@ -106,50 +157,130 @@
     $('count').textContent = `${done} / ${elapsed}`;
   }
 
-  function toggle(k) {
-    days.has(k) ? days.delete(k) : days.add(k);
-    save();
-    render(days.has(k) ? k : null);
-    if (days.has(k) && navigator.vibrate) navigator.vibrate(10);
-  }
-  const markToday = () => {
-    const k = key(today());
+  function markToday() {
+    const g = goal(), k = key(today());
     year = today().getFullYear();
-    days.has(k) ? render() : toggle(k);
-  };
+    if (k in g.days) return render();
+    g.days[k] = ''; save(); render(k);
+    if (navigator.vibrate) navigator.vibrate(10);
+  }
 
-  // Tap a dot to toggle that day. Tap anywhere else to mark today (never unmarks).
-  document.addEventListener('click', e => {
-    if (e.target.closest('#title, #year')) return;
-    const k = e.target.dataset && e.target.dataset.k;
-    if (k) { if (!e.target.classList.contains('future')) toggle(k); return; }
-    markToday();
+  function switchGoal(dir) {
+    const i = state.goals.findIndex(g => g.id === goal().id);
+    state.active = state.goals[(i + dir + state.goals.length) % state.goals.length].id;
+    save(); render();
+  }
+
+  // --- goals: tap a tab to switch, tap the active one to rename, empty name deletes ---
+  function editTab(el, g, isNew) {
+    el.contentEditable = 'true'; el.focus(); getSelection().selectAllChildren(el);
+    el.onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); el.blur(); } };
+    el.onblur = () => {
+      el.onblur = null; // render() below removes this node, which would fire blur again
+      const name = el.textContent.trim().slice(0, 24);
+      if (name) g.name = name;
+      else if (state.goals.length > 1 && (isNew || !Object.keys(g.days).length || confirm(`Delete "${g.name}" and its history?`))) {
+        state.goals = state.goals.filter(x => x !== g); state.active = state.goals[0].id;
+      }
+      save(); render();
+    };
+  }
+
+  $('tabs').addEventListener('click', e => {
+    e.stopPropagation(); // tab clicks must never count as "tap anywhere to mark"
+    const el = e.target.closest('span');
+    if (!el || el.isContentEditable) return;
+    if (el.classList.contains('add')) {
+      const g = { id: uid(), name: '', days: {} };
+      state.goals.push(g); state.active = g.id; render();
+      return editTab($('tabs').querySelector(`[data-id="${g.id}"]`), g, true);
+    }
+    const g = state.goals.find(x => x.id === el.dataset.id);
+    if (g.id === state.active) editTab(el, g);
+    else { state.active = g.id; save(); render(); }
   });
 
-  const years = () => [...new Set([...days].map(k => +k.slice(0, 4)).concat(today().getFullYear()))].sort();
-  const shiftYear = dir => { const ys = years(), i = ys.indexOf(year); year = ys[(i + dir + ys.length) % ys.length]; render(); };
-  $('year').addEventListener('click', () => shiftYear(-1));
+  // --- day sheet: every goal for one day, with a note each ------------------
+  let openKey = null;
+  const sheet = $('sheet');
+
+  function openDay(k) {
+    openKey = k;
+    const d = parse(k);
+    $('date').textContent = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: d.getFullYear() === today().getFullYear() ? undefined : 'numeric' });
+    $('next').disabled = k >= key(today());
+
+    $('rows').replaceChildren(...state.goals.map(g => {
+      const row = document.createElement('div'); row.className = 'row';
+      const label = document.createElement('label');
+      label.innerHTML = '<b></b><span></span>';
+      label.lastChild.textContent = g.name;
+      const ta = document.createElement('textarea');
+      ta.rows = 1; ta.placeholder = 'what did you do?'; ta.value = g.days[k] || '';
+      const sync = () => row.classList.toggle('done', k in g.days);
+      const grow = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
+      label.onclick = () => { k in g.days ? delete g.days[k] : (g.days[k] = ta.value); save(); sync(); };
+      ta.oninput = () => { if (ta.value.trim() || k in g.days) g.days[k] = ta.value; save(); sync(); grow(); };
+      row.append(label, ta); sync(); requestAnimationFrame(grow);
+      return row;
+    }));
+    sheet.classList.add('open');
+  }
+
+  function closeDay() {
+    if (!openKey) return;
+    if (document.activeElement) document.activeElement.blur();
+    sheet.classList.remove('open'); openKey = null; render();
+  }
+
+  const step = n => { const k = key(addDays(parse(openKey), n)); if (k <= key(today())) openDay(k); };
+  $('prev').onclick = () => step(-1);
+  $('next').onclick = () => step(1);
+  sheet.addEventListener('click', e => { if (e.target === sheet) closeDay(); });
+
+  // --- input ---------------------------------------------------------------
+  let swiped = false;
+  document.addEventListener('click', e => {
+    if (swiped) { swiped = false; return; }
+    if (openKey || !e.target.isConnected || e.target.closest('nav, #year, #sheet')) return;
+    const k = e.target.dataset && e.target.dataset.k;
+    if (k) { if (!e.target.classList.contains('future')) openDay(k); return; }
+    markToday(); // tap anywhere else marks today (never unmarks)
+  });
+
+  $('year').addEventListener('click', () => {
+    const ys = [...new Set(state.goals.flatMap(g => Object.keys(g.days).map(k => +k.slice(0, 4))).concat(today().getFullYear()))].sort();
+    year = ys[(ys.indexOf(year) - 1 + ys.length) % ys.length]; render();
+  });
+
+  // Swipe left/right to switch goals.
+  let tx = 0, ty = 0;
+  document.addEventListener('touchstart', e => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true });
+  document.addEventListener('touchend', e => {
+    if (openKey) return;
+    const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
+    if (Math.abs(dx) > 60 && Math.abs(dy) < 50) { swiped = true; switchGoal(dx < 0 ? 1 : -1); setTimeout(() => swiped = false, 400); }
+  }, { passive: true });
 
   document.addEventListener('keydown', e => {
-    if (document.activeElement === $('title')) return;
+    const typing = document.activeElement && (document.activeElement.isContentEditable || document.activeElement.tagName === 'TEXTAREA');
+    if (openKey) {
+      if (e.key === 'Escape') closeDay();
+      else if (!typing && e.key === 'ArrowLeft') step(-1);
+      else if (!typing && e.key === 'ArrowRight') step(1);
+      return;
+    }
+    if (typing) return;
     if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); markToday(); }
-    else if (e.key === 'ArrowLeft') shiftYear(-1);
-    else if (e.key === 'ArrowRight') shiftYear(1);
+    else if (e.key === 'n') { e.preventDefault(); openDay(key(today())); setTimeout(() => $('rows').querySelector(`.row:nth-child(${state.goals.indexOf(goal()) + 1}) textarea`).focus(), 50); }
+    else if (e.key === 'ArrowRight') switchGoal(1);
+    else if (e.key === 'ArrowLeft') switchGoal(-1);
+    else if (/^[1-9]$/.test(e.key) && state.goals[e.key - 1]) { state.active = state.goals[e.key - 1].id; save(); render(); }
     else if (e.key === 'e') exportData();
     else if (e.key === 'i') importData();
   });
 
-  const title = $('title');
-  title.textContent = state.title;
-  title.addEventListener('click', () => { title.contentEditable = 'true'; title.focus(); getSelection().selectAllChildren(title); });
-  title.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === 'Escape') { e.preventDefault(); title.blur(); } });
-  title.addEventListener('blur', () => {
-    title.contentEditable = 'false';
-    state.title = title.textContent.trim().slice(0, 40) || 'consistency';
-    title.textContent = state.title; save();
-  });
-
-  // Backup: press e / i.
+  // --- backup: e / i ---------------------------------------------------------
   function exportData() {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }));
@@ -160,8 +291,11 @@
     input.onchange = async () => {
       try {
         const data = JSON.parse(await input.files[0].text());
-        (data.days || []).filter(k => /^\d{4}-\d\d-\d\d$/.test(k)).forEach(k => days.add(k));
-        if (data.title) title.textContent = state.title = data.title;
+        if (!Array.isArray(data.goals)) throw 0;
+        for (const g of data.goals) {
+          const mine = state.goals.find(x => x.name === g.name);
+          if (mine) Object.assign(mine.days, g.days); else state.goals.push({ id: uid(), name: g.name, days: g.days || {} });
+        }
         save(); render();
       } catch { alert('Could not read that file.'); }
     };
@@ -170,11 +304,11 @@
 
   // Stay correct across midnight and when reopened from the background.
   let lastDay = key(today());
-  const tick = () => { if (key(today()) !== lastDay) { lastDay = key(today()); year = today().getFullYear(); render(); } };
+  const tick = () => { if (key(today()) !== lastDay) { lastDay = key(today()); year = today().getFullYear(); if (!openKey) render(); } };
   setInterval(tick, 60000);
   document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && tick());
 
-  render();
+  save(); render();
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
 </script>
